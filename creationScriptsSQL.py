@@ -22,29 +22,32 @@ tableContact = """CREATE TABLE IF NOT EXISTS contact_groups(
 )"""
 
 viewServices = """
-    CREATE VIEW services 
-    AS 
+    CREATE VIEW IF NOT EXISTS services
+    AS
     SELECT
-    title,
-    client_name,
-    client_lastname,
-    price,
-    FROM
-    services_hist
-    INNER JOIN orders ON orders.service_id = services_hist.service_id
-    INNER JOIN contact_groups ON contact_groups.id = orders.client_id
-    where contact_groups.deleted_flg = 0 and services_hist.end_dttm is null
+        title,
+        price,
+        lastname,
+        name
+    from
+    (
+       SELECT
+        distinct(title),
+        price,
+        orders.service_id,
+        orders.client_id
+    from services_hist
+    LEFT JOIN orders on services_hist.service_id = orders.service_id
+    where services_hist.end_dttm = datetime('2999-12-31 23:59:59')
+    ) as clientService
+    LEFT JOIN contact_groups on contact_groups.id = clientService.client_id
+
 """
 
 services_stat = """
-    CREATE VIEW services 
-    AS 
+    CREATE VIEW IF NOT EXISTS servicesstat
+    AS
     SELECT
-    title,
-    price,
-    count(orders.id)
-    FROM
-    services_hist
-    INNER JOIN orders ON orders.service_id = services_hist.service_id
-    ROUP BY orders.id
+        services_hist.title, count(distinct(orders.id)) from services_hist left JOIN orders ON orders.service_id = services_hist.service_id
+        group by services_hist.title
 """
